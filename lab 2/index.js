@@ -1,12 +1,12 @@
 const http = require("http");
 const users = [
   {
-    id: 2,
+    id: 1,
     name: "mohamed",
     age: 23,
   },
   {
-    id: 1,
+    id: 2,
     name: "Ahmed",
     age: 24,
   },
@@ -14,6 +14,23 @@ const users = [
     id: 3,
     name: "nada",
     age: 22,
+  },
+];
+const posts = [
+  {
+    pId: 1,
+    title: "sport",
+    likes: 200,
+  },
+  {
+    pId: 2,
+    title: "science",
+    likes: 400,
+  },
+  {
+    pId: 3,
+    title: "news",
+    likes: 500,
   },
 ];
 const server = http.createServer((req, res) => {
@@ -59,6 +76,47 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify(user));
     }
   }
+  //-----------------------------------------------------------
+  if (req.url == "/posts" && req.method == "GET") {
+    const sortPosts = posts.slice().sort((a, b) => b.pId - a.pId);
+    res.end(JSON.stringify(sortPosts));
+    // Add Post
+  } else if (req.url == "/addPost" && req.method == "POST") {
+    req.on("data", function (chunk) {
+      posts.push(JSON.parse(chunk));
+      res.end(JSON.stringify(posts));
+    });
+    // Delete post
+  } else if (req.url.startsWith("/post/") && req.method == "DELETE") {
+    const postId = +req.url.split("/")[2];
+    const postIndex = posts.findIndex((post) => post.pId === postId);
+    if (postIndex !== -1) {
+      posts.splice(postIndex, 1);
+      res.end(JSON.stringify(posts));
+    }
+    // Update User
+  } else if (
+    req.url.startsWith("/post/") &&
+    (req.method == "PUT" || req.method == "PATCH")
+  ) {
+    const postId = parseInt(req.url.split("/")[2]);
+    const postIndex = posts.findIndex((post) => post.pId === postId);
+    if (postIndex !== -1) {
+      req.on("data", function (chunk) {
+        const updatedPostData = JSON.parse(chunk);
+        Object.assign(posts[postIndex], updatedPostData);
+        res.end(JSON.stringify(posts[postIndex]));
+      });
+    }
+    // search By Id
+  } else if (req.url.startsWith("/post/") && req.method == "GET") {
+    const postId = +req.url.split("/")[2];
+    const post = posts.find((post) => post.pId === postId);
+    if (post) {
+      res.end(JSON.stringify(post));
+    }
+  }
 });
 
 server.listen(3002);
+//-----------------------------------------------------------
