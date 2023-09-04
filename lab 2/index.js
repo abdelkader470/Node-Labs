@@ -77,6 +77,9 @@ const server = http.createServer((req, res) => {
     }
   }
   //-----------------------------------------------------------
+  /* 
+  ===================post end points=================
+  */
   if (req.url == "/posts" && req.method == "GET") {
     const sortPosts = posts.slice().sort((a, b) => b.pId - a.pId);
     res.end(JSON.stringify(sortPosts));
