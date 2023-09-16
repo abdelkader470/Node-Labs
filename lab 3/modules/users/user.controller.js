@@ -1,33 +1,63 @@
 import userModel from "../../db/model/user.model.js";
+import bcrypt from "bcrypt";
 
 const signUp = async (req, res) => {
-  let addUser = await userModel.insertMany(req.body);
-  res.json(addUser);
+  try {
+    let foundedUser = await userModel.findOne({ email: req.body.email });
+    if (foundedUser) {
+      res.status(409).json({ Msg: "Already Resgister" });
+    } else {
+      let hashedPassword = bcrypt.hashSync(req.body.password, 10);
+      let addedUser = await userModel.insertMany({
+        ...req.body,
+        password: hashedPassword,
+      });
+      res.status(201).json({ addedUser });
+    }
+  } catch (error) {
+    res.status(400).json({ Msg: "error", error });
+  }
 };
 const signIn = async (req, res) => {
-  let { email, password } = req.body;
-  if (!email && !password) {
-    res.json({ error: "Write email and password" });
-  }
-  try {
-    let user = await userModel.findOne({ email: email });
-    if (!user) {
-      return res.json({ error: "Invalid email or password." });
+  let foundedUser = await userModel.findOne({ email: req.body.email });
+  if (foundedUser) {
+    let matched = bcrypt.compareSync(req.body.password, foundedUser.password);
+    if (matched) {
+      res.status(200).json({ Msg: "login Successfully", foundedUser });
+    } else {
+      res.status(400).json({ Msg: "Wrong Password" });
     }
-    if (user.password !== password) {
-      return res.json({ error: "Invalid email or password." });
-    }
-    res.json({ message: "SignIn Done", user });
-  } catch {
-    console.error("sign-in Error", error);
+  } else {
+    res.status(404).json({ Msg: "User Not Found, U Have To Resgister First" });
   }
 };
+// const signIn = async (req, res) => {
+//   let { email, password } = req.body;
+//   if (!email && !password) {
+//     res.json({ error: "Write email and password" });
+//   }
+//   try {
+//     let user = await userModel.findOne({ email: email });
+//     if (!user) {
+//       return res.json({ error: "Invalid email or password." });
+//     }
+//     if (user.password !== password) {
+//       return res.json({ error: "Invalid email or password." });
+//     }
+//     res.json({ message: "SignIn Done", user });
+//   } catch {
+//     console.error("sign-in Error", error);
+//   }
+// };
 const updateUser = async (req, res) => {
   let { id } = req.params;
   let updatedUser = await userModel.findByIdAndUpdate(
     id,
     {
       userName: req.body.userName,
+      password: req.body.password,
+      age: req.body.age,
+      phone: req.body.phone,
     },
     { new: true }
   );
